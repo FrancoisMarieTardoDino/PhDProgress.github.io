@@ -5,6 +5,297 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ch.2 — BLP Extended Model — François-Marie Tardo Dino</title>
   <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <style>
+    /* ── BLP-specific styles ── */
+    :root {
+      --blp-accent: #c9553a;
+      --blp-accent-soft: #c9553a22;
+      --blp-blue: #2a5d8a;
+      --blp-blue-soft: #2a5d8a18;
+      --blp-gold: #b8860b;
+      --blp-green: #3a7c5f;
+      --blp-purple: #6b4c8a;
+      --blp-text: #1a1a1a;
+      --blp-muted: #6b6b6b;
+      --blp-border: #d4cfc8;
+      --blp-bg: #faf8f5;
+      --blp-card: #ffffff;
+    }
+
+    .blp-section { max-width: 1180px; margin: 0 auto; padding: 2.5rem 1.5rem; }
+
+    /* Status Banner */
+    .data-status-banner {
+      background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+      border: 1px solid #a5d6a7;
+      border-radius: 10px;
+      padding: 1.2rem 1.6rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+    .data-status-banner .status-icon {
+      font-size: 1.5rem;
+      flex-shrink: 0;
+    }
+    .data-status-banner p { margin: 0; font-size: 0.92rem; line-height: 1.5; color: #2e7d32; }
+    .data-status-banner strong { color: #1b5e20; }
+
+    /* Tab Navigation */
+    .blp-tabs {
+      display: flex;
+      gap: 0;
+      border-bottom: 2px solid var(--blp-border);
+      margin-bottom: 2rem;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .blp-tab {
+      padding: 0.75rem 1.4rem;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--blp-muted);
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.25s;
+      font-family: inherit;
+      letter-spacing: 0.02em;
+    }
+    .blp-tab:hover { color: var(--blp-text); background: var(--blp-accent-soft); }
+    .blp-tab.active {
+      color: var(--blp-accent);
+      border-bottom-color: var(--blp-accent);
+    }
+    .blp-panel { display: none; animation: fadePanel 0.35s ease; }
+    .blp-panel.active { display: block; }
+    @keyframes fadePanel { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Section Headers */
+    .blp-section-header {
+      display: flex;
+      align-items: baseline;
+      gap: 0.8rem;
+      margin-bottom: 1.5rem;
+    }
+    .blp-section-header h3 {
+      font-size: 1.25rem;
+      font-weight: 700;
+      color: var(--blp-text);
+      margin: 0;
+    }
+    .blp-section-header .badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      padding: 0.2rem 0.6rem;
+      border-radius: 4px;
+      flex-shrink: 0;
+    }
+    .badge-cn { background: #fce4ec; color: #c62828; }
+    .badge-fr { background: #e3f2fd; color: #1565c0; }
+    .badge-both { background: #fff3e0; color: #e65100; }
+
+    /* Data Tables */
+    .blp-table-wrap {
+      overflow-x: auto;
+      border: 1px solid var(--blp-border);
+      border-radius: 8px;
+      margin-bottom: 2rem;
+      background: var(--blp-card);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.04);
+    }
+    .blp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.78rem;
+      white-space: nowrap;
+    }
+    .blp-table th {
+      background: #f5f2ed;
+      padding: 0.6rem 0.7rem;
+      text-align: left;
+      font-weight: 700;
+      color: var(--blp-text);
+      border-bottom: 2px solid var(--blp-border);
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      font-size: 0.72rem;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+    }
+    .blp-table td {
+      padding: 0.5rem 0.7rem;
+      border-bottom: 1px solid #eee;
+      color: #333;
+    }
+    .blp-table tbody tr:hover { background: var(--blp-accent-soft); }
+    .blp-table .num { text-align: right; font-variant-numeric: tabular-nums; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.76rem; }
+    .blp-table .highlight { background: #fffde7; }
+
+    /* Charts */
+    .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem; }
+    .chart-card {
+      background: var(--blp-card);
+      border: 1px solid var(--blp-border);
+      border-radius: 10px;
+      padding: 1.2rem;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+    }
+    .chart-card h4 {
+      font-size: 0.82rem;
+      font-weight: 700;
+      margin: 0 0 0.8rem 0;
+      color: var(--blp-text);
+      letter-spacing: 0.02em;
+    }
+    .chart-card canvas { width: 100% !important; }
+    .chart-card-full { grid-column: 1 / -1; }
+
+    /* Stat Cards */
+    .stat-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 2rem; }
+    .stat-card {
+      background: var(--blp-card);
+      border: 1px solid var(--blp-border);
+      border-radius: 8px;
+      padding: 1.1rem 1.3rem;
+      text-align: center;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+    }
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--blp-muted);
+      margin-bottom: 0.4rem;
+    }
+    .stat-card .stat-value {
+      font-size: 1.6rem;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+    .stat-card .stat-sub {
+      font-size: 0.72rem;
+      color: var(--blp-muted);
+      margin-top: 0.2rem;
+    }
+    .stat-cn .stat-value { color: #c62828; }
+    .stat-fr .stat-value { color: #1565c0; }
+    .stat-neutral .stat-value { color: var(--blp-accent); }
+
+    /* Equation Box */
+    .equation-box {
+      background: #f9f7f3;
+      border-left: 4px solid var(--blp-accent);
+      border-radius: 0 8px 8px 0;
+      padding: 1.5rem 2rem;
+      margin: 1.5rem 0;
+      font-family: 'Georgia', 'Times New Roman', serif;
+      font-size: 1.05rem;
+      line-height: 2;
+      overflow-x: auto;
+    }
+    .equation-box .eq-main { font-size: 1.15rem; font-style: italic; }
+    .equation-box .eq-where { font-size: 0.88rem; color: var(--blp-muted); font-style: normal; margin-top: 0.5rem; }
+
+    /* Market Selector */
+    .market-toggle {
+      display: inline-flex;
+      border: 1px solid var(--blp-border);
+      border-radius: 6px;
+      overflow: hidden;
+      margin-bottom: 1.5rem;
+    }
+    .market-toggle button {
+      padding: 0.5rem 1.2rem;
+      font-size: 0.8rem;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: inherit;
+      background: var(--blp-card);
+      color: var(--blp-muted);
+    }
+    .market-toggle button.active { background: var(--blp-accent); color: #fff; }
+    .market-toggle button:not(:last-child) { border-right: 1px solid var(--blp-border); }
+
+    /* Methodology Notes */
+    .method-note {
+      background: var(--blp-blue-soft);
+      border: 1px solid #b0c4de;
+      border-radius: 8px;
+      padding: 1rem 1.3rem;
+      font-size: 0.85rem;
+      line-height: 1.6;
+      color: #1a3a5c;
+      margin: 1rem 0;
+    }
+
+    /* IFM Heatmap */
+    .ifm-legend {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.72rem;
+      color: var(--blp-muted);
+      margin: 0.5rem 0 1rem 0;
+    }
+    .ifm-legend .gradient-bar {
+      width: 120px;
+      height: 12px;
+      border-radius: 3px;
+      background: linear-gradient(to right, #c8e6c9, #fff9c4, #ffcc80, #ef9a9a, #e57373);
+    }
+
+    .blp-table td.ifm-cell {
+      font-weight: 700;
+      text-align: center;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      .chart-grid { grid-template-columns: 1fr; }
+      .stat-row { grid-template-columns: 1fr 1fr; }
+      .blp-tabs { gap: 0; }
+      .blp-tab { padding: 0.6rem 0.9rem; font-size: 0.78rem; }
+    }
+
+    /* Table height limiter */
+    .blp-table-scroll {
+      max-height: 520px;
+      overflow-y: auto;
+    }
+
+    /* Param table */
+    .param-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin: 1.5rem 0; }
+    .param-card {
+      background: var(--blp-card);
+      border: 1px solid var(--blp-border);
+      border-radius: 8px;
+      padding: 1.2rem;
+    }
+    .param-card h4 { margin: 0 0 0.8rem 0; font-size: 0.9rem; }
+    .param-row {
+      display: flex;
+      justify-content: space-between;
+      padding: 0.35rem 0;
+      border-bottom: 1px solid #f0f0f0;
+      font-size: 0.85rem;
+    }
+    .param-row:last-child { border-bottom: none; }
+    .param-name { color: var(--blp-muted); }
+    .param-val { font-weight: 700; font-family: 'SF Mono', monospace; }
+
+    @media (max-width: 768px) { .param-grid { grid-template-columns: 1fr; } }
+  </style>
 </head>
 <body>
 
@@ -32,135 +323,394 @@
   </div>
 </section>
 
-<section class="section fade-in">
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- MAIN CONTENT                                                    -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<section class="blp-section fade-in">
+
   <a href="research.html" class="back-link">
     <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M11 7H3M7 3L3 7l4 4"/></svg>
     Back to research overview
   </a>
 
-  <div class="notice-banner">
-    <div class="notice-icon">🚧</div>
+  <!-- Status Banner -->
+  <div class="data-status-banner">
+    <div class="status-icon">📊</div>
     <p>
-      <strong>Data not yet collected.</strong> This interface is a preview. The spectacle index requires advertising content 
-      coding and hedonic regression residuals that have not been computed yet. 
-      Construction is planned for Year 2 of the doctoral programme (2027–2028).
+      <strong>Data assembled.</strong> Product-level sales, characteristics and prices have been collected for 50 models in China and 50 models in France (2022–2024). BLP instrument variables and the IFM index for the Chinese market (2018–2022) are computed. Estimation is in progress.
     </p>
   </div>
 
-  <h2>Objective</h2>
-  <p>
-    This chapter transforms the philosophical concept of the "spectacle" (Debord, 1967) — the dominance of image-value over 
-    use-value in commodity relations — into a reproducible, quantitative index that can be integrated into a structural 
-    demand estimation framework.
-  </p>
-
-  <h2>The Spectacle Index (IFM)</h2>
-  <p>
-    The commodity fetishism index IFM<sub>jt</sub> for product <em>j</em> in market <em>t</em> is constructed from two components:
-  </p>
-  <div class="method-list">
-    <div class="method-item">
-      <div class="method-bullet">A</div>
-      <p><strong>Advertising component</strong> — Ratio of exposure time to narrative elements (celebrities, lifestyle, brand identity) versus objective product information (specifications, performance, price) in advertisements for product <em>j</em>.</p>
-    </div>
-    <div class="method-item">
-      <div class="method-bullet">B</div>
-      <p><strong>Price–utility component</strong> — Residual from a hedonic price regression of price on objective characteristics. The ratio of unexplained price to total price captures the "image premium" paid beyond measurable attributes.</p>
-    </div>
-  </div>
-
+  <!-- ── THEORY ── -->
   <h2>The Extended BLP Model</h2>
   <p>
-    The index enters the consumer's indirect utility function in the Berry, Levinsohn &amp; Pakes (1995) framework. 
-    Consumer <em>i</em>'s utility from product <em>j</em> in market <em>t</em> is:
+    The commodity fetishism index IFM<sub>jt</sub> for product <em>j</em> in market <em>t</em> enters the consumer's indirect utility in the Berry, Levinsohn &amp; Pakes (1995) framework:
   </p>
-
-  <div class="equation-block">
-    U<sub>ijt</sub> = x<sub>jt</sub> β<sub>i</sub> − α<sub>i</sub> p<sub>jt</sub> + γ · IFM<sub>jt</sub> + ξ<sub>jt</sub> + ε<sub>ijt</sub>
-    <br><br>
-    where:
-    <br>  x<sub>jt</sub>  = observable product characteristics
-    <br>  p<sub>jt</sub>  = price
-    <br>  IFM<sub>jt</sub> = spectacle index
-    <br>  ξ<sub>jt</sub>  = unobserved product quality
-    <br>  ε<sub>ijt</sub> = i.i.d. error term
-    <br><br>
-    Key parameter: <strong>γ</strong> = marginal effect of the spectacle on utility
+  <div class="equation-box">
+    <div class="eq-main">
+      U<sub>ijt</sub> = x<sub>jt</sub> β<sub>i</sub> − α<sub>i</sub> p<sub>jt</sub> + γ · IFM<sub>jt</sub> + ξ<sub>jt</sub> + ε<sub>ijt</sub>
+    </div>
+    <div class="eq-where">
+      x<sub>jt</sub> = observable characteristics &nbsp;|&nbsp;
+      p<sub>jt</sub> = price &nbsp;|&nbsp;
+      IFM<sub>jt</sub> = spectacle index &nbsp;|&nbsp;
+      ξ<sub>jt</sub> = unobserved quality &nbsp;|&nbsp;
+      ε<sub>ijt</sub> = i.i.d. Type I EV &nbsp;|&nbsp;
+      <strong>γ</strong> = spectacle premium coefficient
+    </div>
   </div>
 
-  <h2>Identification strategy</h2>
-  <p>
-    A potential endogeneity concern arises from correlation between IFM and ξ (unobserved quality may partly capture brand narratives). 
-    Two strategies are envisaged: instrumental variables and coefficient stability analysis over rolling 3–4 year windows.
-  </p>
+  <!-- ═══ TABS ═══ -->
+  <div class="blp-tabs" role="tablist">
+    <button class="blp-tab active" data-panel="market" role="tab">Market Data</button>
+    <button class="blp-tab" data-panel="blpvars" role="tab">BLP Variables</button>
+    <button class="blp-tab" data-panel="ifm" role="tab">IFM Index</button>
+    <button class="blp-tab" data-panel="instruments" role="tab">Instruments</button>
+    <button class="blp-tab" data-panel="estimation" role="tab">Estimation</button>
+  </div>
 
-  <!-- ── MODEL INTERFACE (DISABLED) ── -->
-  <div class="model-interface mt-2">
-    <h3>BLP Estimation Interface</h3>
-    <p class="interface-desc">Configure the extended BLP model with spectacle index. Currently inactive — awaiting data collection and index construction.</p>
+  <!-- ══════════════════════════════ -->
+  <!-- TAB 1: MARKET DATA            -->
+  <!-- ══════════════════════════════ -->
+  <div class="blp-panel active" id="panel-market">
 
-    <div class="form-grid">
-      <div class="form-group">
-        <label>Product market</label>
-        <select disabled>
-          <option>Automobiles — China</option>
-          <option>Automobiles — France</option>
-          <option>Coffee shops — China</option>
-        </select>
+    <!-- Key Stats -->
+    <div class="stat-row">
+      <div class="stat-card stat-cn">
+        <div class="stat-label">China PV Market 2024</div>
+        <div class="stat-value">23.26M</div>
+        <div class="stat-sub">units · 40.9% NEV share</div>
       </div>
-      <div class="form-group">
-        <label>Estimation period</label>
-        <select disabled>
-          <option>2018–2024</option>
-          <option>2015–2024</option>
-          <option>Custom range</option>
-        </select>
+      <div class="stat-card stat-fr">
+        <div class="stat-label">France PV Market 2024</div>
+        <div class="stat-value">1.72M</div>
+        <div class="stat-sub">units · 16.9% BEV share</div>
       </div>
-      <div class="form-group">
-        <label>IFM components</label>
-        <select disabled>
-          <option>Both (advertising + hedonic residual)</option>
-          <option>Advertising only</option>
-          <option>Hedonic residual only</option>
-        </select>
+      <div class="stat-card stat-cn">
+        <div class="stat-label">China Top 50 Coverage</div>
+        <div class="stat-value">72.1%</div>
+        <div class="stat-sub">of total market sales</div>
       </div>
-      <div class="form-group">
-        <label>Random coefficients on</label>
-        <select disabled>
-          <option>Price, horsepower, fuel efficiency</option>
-          <option>Price only</option>
-          <option>All attributes</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Instrument set</label>
-        <select disabled>
-          <option>BLP instruments (rival characteristics)</option>
-          <option>Hausman instruments (other-market prices)</option>
-          <option>Cost shifters</option>
-        </select>
-      </div>
-      <div class="form-group">
-        <label>Optimisation method</label>
-        <select disabled>
-          <option>Nested fixed-point (NFP)</option>
-          <option>MPEC (constrained optimisation)</option>
-        </select>
+      <div class="stat-card stat-fr">
+        <div class="stat-label">France Top 50 Coverage</div>
+        <div class="stat-value">66.4%</div>
+        <div class="stat-sub">of total market sales</div>
       </div>
     </div>
 
-    <button class="btn-disabled" disabled>
-      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><path d="M8 5v3l2 1"/></svg>
-      Run BLP estimation — awaiting data
-    </button>
+    <!-- Charts: Sales & Segment Distribution -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h4>🇨🇳 China — Top 15 by 2024 Sales</h4>
+        <canvas id="chartChinaTop15" height="280"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>🇫🇷 France — Top 15 by 2024 Sales</h4>
+        <canvas id="chartFranceTop15" height="280"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>🇨🇳 China — Segment Distribution</h4>
+        <canvas id="chartChinaSeg" height="220"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>🇫🇷 France — Segment Distribution</h4>
+        <canvas id="chartFranceSeg" height="220"></canvas>
+      </div>
+    </div>
+
+    <!-- Market Toggle + Table -->
+    <div class="blp-section-header">
+      <h3>Product-Level Data</h3>
+      <span class="badge badge-both">50 models × 2 markets</span>
+    </div>
+
+    <div class="market-toggle">
+      <button class="active" onclick="showMarket('cn', this)">🇨🇳 China</button>
+      <button onclick="showMarket('fr', this)">🇫🇷 France</button>
+    </div>
+
+    <div class="blp-table-wrap">
+      <div class="blp-table-scroll">
+        <table class="blp-table" id="marketTable">
+          <thead id="marketTableHead"></thead>
+          <tbody id="marketTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="method-note">
+      <strong>Sources:</strong> China — CPCA, Focus2Move, BestSellingCarsBlog, CarNewsChina, manufacturer websites.
+      France — CCFA, best-selling-cars.com, BestSellingCarsBlog, manufacturer websites.
+      Product <em>j</em> is defined at the model-year level. Prices are base MSRP in local currency (thousands).
+    </div>
   </div>
 
-  <h2 class="mt-2">Expected output</h2>
-  <p>
-    Estimated demand parameters including the spectacle coefficient γ, with standard errors and confidence intervals. 
-    Own-price elasticities and counterfactual simulations showing how demand shifts when the spectacle component is 
-    removed from the price premium.
-  </p>
+  <!-- ══════════════════════════════ -->
+  <!-- TAB 2: BLP VARIABLES           -->
+  <!-- ══════════════════════════════ -->
+  <div class="blp-panel" id="panel-blpvars">
+
+    <div class="blp-section-header">
+      <h3>BLP Computed Variables (2024)</h3>
+      <span class="badge badge-both">100 observations</span>
+    </div>
+
+    <p style="font-size: 0.9rem; line-height: 1.65; margin-bottom: 1.5rem;">
+      Market shares s<sub>j</sub> = sales<sub>j</sub> / M<sub>t</sub>, where M<sub>t</sub> is total PV registrations.
+      Outside good share s<sub>0</sub> = 1 − Σs<sub>j</sub>.
+      Dependent variable: δ<sub>jt</sub> = ln(s<sub>j</sub>) − ln(s<sub>0</sub>).
+      Characteristics are normalised: price/income, HP/weight, size = L×W/10<sup>6</sup>.
+    </p>
+
+    <!-- Scatter Plots -->
+    <div class="chart-grid">
+      <div class="chart-card">
+        <h4>Price/Income vs Market Share</h4>
+        <canvas id="chartPriceShare" height="260"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>ln(s<sub>j</sub>/s<sub>0</sub>) Distribution</h4>
+        <canvas id="chartDeltaDist" height="260"></canvas>
+      </div>
+    </div>
+
+    <div class="market-toggle">
+      <button class="active" onclick="showBLP('cn', this)">🇨🇳 China</button>
+      <button onclick="showBLP('fr', this)">🇫🇷 France</button>
+    </div>
+
+    <div class="blp-table-wrap">
+      <div class="blp-table-scroll">
+        <table class="blp-table" id="blpTable">
+          <thead id="blpTableHead"></thead>
+          <tbody id="blpTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ -->
+  <!-- TAB 3: IFM INDEX               -->
+  <!-- ══════════════════════════════ -->
+  <div class="blp-panel" id="panel-ifm">
+
+    <div class="blp-section-header">
+      <h3>Commodity Fetishism Index — Chinese Auto Market</h3>
+      <span class="badge badge-cn">20 models · 2018–2022</span>
+    </div>
+
+    <p style="font-size: 0.9rem; line-height: 1.65; margin-bottom: 1rem;">
+      The IFM combines two components: <strong>φ<sub>jt</sub></strong> (advertising narrative ratio — share of ad time devoted to narrative elements vs. objective specs) and <strong>ψ<sub>jt</sub></strong> (hedonic residual — price premium unexplained by characteristics). A BLP-based variant uses <strong>λ<sub>jt</sub></strong> (price-to-utility ratio) instead of the hedonic residual.
+    </p>
+
+    <div class="equation-box">
+      <div class="eq-main">
+        IFM<sub>jt</sub> = 0.5 · φ<sub>jt</sub> + 0.5 · ψ̃<sub>jt</sub>
+        &nbsp;&nbsp;&nbsp;|&nbsp;&nbsp;&nbsp;
+        IFM2<sub>jt</sub> = 0.5 · φ<sub>jt</sub> + 0.5 · λ̃<sub>jt</sub>
+      </div>
+      <div class="eq-where">
+        φ = narrative ad ratio &nbsp;|&nbsp;
+        ψ̃ = normalised hedonic residual &nbsp;|&nbsp;
+        λ̃ = normalised BLP price/utility ratio
+      </div>
+    </div>
+
+    <!-- IFM Summary Stats -->
+    <div class="stat-row">
+      <div class="stat-card" style="border-top: 3px solid #e57373;">
+        <div class="stat-label">Foreign Luxury</div>
+        <div class="stat-value" style="color:#c62828;">0.601</div>
+        <div class="stat-sub">Strong fetishisation</div>
+      </div>
+      <div class="stat-card" style="border-top: 3px solid #ffb74d;">
+        <div class="stat-label">Domestic Premium</div>
+        <div class="stat-value" style="color:#e65100;">0.543</div>
+        <div class="stat-sub">Aspirational EV strategy</div>
+      </div>
+      <div class="stat-card" style="border-top: 3px solid #81c784;">
+        <div class="stat-label">JV Mass</div>
+        <div class="stat-value" style="color:#2e7d32;">0.407</div>
+        <div class="stat-sub">Balanced narrative/function</div>
+      </div>
+      <div class="stat-card" style="border-top: 3px solid #90caf9;">
+        <div class="stat-label">Domestic Mass</div>
+        <div class="stat-value" style="color:#1565c0;">0.339</div>
+        <div class="stat-sub">Price/specs competition</div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card chart-card-full">
+        <h4>IFM by Category over Time (Average)</h4>
+        <canvas id="chartIFMTime" height="180"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>IFM Components: φ (Advertising) vs ψ̃ (Hedonic)</h4>
+        <canvas id="chartIFMScatter" height="280"></canvas>
+      </div>
+      <div class="chart-card">
+        <h4>IFM Rankings 2022 — Top & Bottom 5</h4>
+        <canvas id="chartIFMRank" height="280"></canvas>
+      </div>
+    </div>
+
+    <!-- IFM Full Table -->
+    <div class="blp-section-header" style="margin-top: 1rem;">
+      <h3>IFM Detail Table</h3>
+    </div>
+    <div class="ifm-legend">
+      <span>Low IFM</span>
+      <div class="gradient-bar"></div>
+      <span>High IFM</span>
+    </div>
+    <div class="blp-table-wrap">
+      <div class="blp-table-scroll">
+        <table class="blp-table" id="ifmTable">
+          <thead>
+            <tr>
+              <th>Brand</th><th>Model</th><th>Category</th><th>Year</th>
+              <th>φ (Ad)</th><th>ψ̃ (Hed)</th><th>λ̃ (BLP)</th>
+              <th>IFM (hed)</th><th>IFM2 (BLP)</th><th>IFM avg</th><th>Rank</th>
+            </tr>
+          </thead>
+          <tbody id="ifmTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ -->
+  <!-- TAB 4: INSTRUMENTS              -->
+  <!-- ══════════════════════════════ -->
+  <div class="blp-panel" id="panel-instruments">
+
+    <div class="blp-section-header">
+      <h3>Instrument Variables</h3>
+    </div>
+
+    <p style="font-size: 0.9rem; line-height: 1.65; margin-bottom: 1.5rem;">
+      Price is endogenous in the BLP model (correlated with unobserved quality ξ). Three sets of instruments are used to achieve identification:
+    </p>
+
+    <div class="param-grid">
+      <div class="param-card">
+        <h4>BLP Instruments (demand-side)</h4>
+        <div class="param-row"><span class="param-name">IV1</span><span class="param-val">Own-firm avg price</span></div>
+        <div class="param-row"><span class="param-name">IV2</span><span class="param-val">Own-firm avg HP</span></div>
+        <div class="param-row"><span class="param-name">IV3</span><span class="param-val">Own-firm avg size</span></div>
+        <div class="param-row"><span class="param-name">IV4</span><span class="param-val">Rival firms avg price</span></div>
+        <div class="param-row"><span class="param-name">IV5</span><span class="param-val">Rival firms avg HP</span></div>
+        <div class="param-row"><span class="param-name">IV6</span><span class="param-val">Rival firms avg size</span></div>
+        <div class="param-row"><span class="param-name">IV7</span><span class="param-val"># own-firm products</span></div>
+        <div class="param-row"><span class="param-name">IV8</span><span class="param-val"># rival products</span></div>
+      </div>
+      <div class="param-card">
+        <h4>Cost-Shifting Instruments</h4>
+        <div class="param-row"><span class="param-name">Steel HRC</span><span class="param-val">620 USD/t (2024)</span></div>
+        <div class="param-row"><span class="param-name">Aluminum</span><span class="param-val">2,380 USD/t</span></div>
+        <div class="param-row"><span class="param-name">Lithium</span><span class="param-val">98k CNY/t</span></div>
+        <div class="param-row"><span class="param-name">Copper</span><span class="param-val">9,140 USD/t</span></div>
+        <div class="param-row"><span class="param-name">CNY/USD</span><span class="param-val">7.10</span></div>
+        <div class="param-row"><span class="param-name">EUR/USD</span><span class="param-val">0.92</span></div>
+        <div class="param-row"><span class="param-name">CN Wage Idx</span><span class="param-val">124.0</span></div>
+        <div class="param-row"><span class="param-name">FR Wage Idx</span><span class="param-val">118.5</span></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card chart-card-full">
+        <h4>Key Input Costs (2022–2024)</h4>
+        <canvas id="chartCosts" height="160"></canvas>
+      </div>
+    </div>
+
+    <div class="blp-section-header" style="margin-top: 1rem;">
+      <h3>Full Cost Instruments Table</h3>
+    </div>
+    <div class="blp-table-wrap">
+      <table class="blp-table" id="costTable">
+        <thead>
+          <tr><th>Variable</th><th>Unit</th><th>2022</th><th>2023</th><th>2024</th><th>Source</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Steel HRC (Global)</td><td>USD/ton</td><td class="num">950</td><td class="num">680</td><td class="num">620</td><td>World Steel / LME</td></tr>
+          <tr><td>Aluminum (LME)</td><td>USD/ton</td><td class="num">2,705</td><td class="num">2,255</td><td class="num">2,380</td><td>LME</td></tr>
+          <tr><td>Lithium Carbonate (CN)</td><td>CNY/ton</td><td class="num">480,000</td><td class="num">110,000</td><td class="num">98,000</td><td>Asian Metal / SMM</td></tr>
+          <tr><td>Copper (LME)</td><td>USD/ton</td><td class="num">8,788</td><td class="num">8,477</td><td class="num">9,140</td><td>LME</td></tr>
+          <tr><td>Cobalt</td><td>USD/lb</td><td class="num">32.50</td><td class="num">15.20</td><td class="num">12.80</td><td>LME / Benchmark</td></tr>
+          <tr><td>Nickel (LME)</td><td>USD/ton</td><td class="num">25,600</td><td class="num">16,400</td><td class="num">16,200</td><td>LME</td></tr>
+          <tr><td>Rubber (Shanghai)</td><td>CNY/ton</td><td class="num">12,500</td><td class="num">12,800</td><td class="num">14,500</td><td>Shanghai Futures</td></tr>
+          <tr style="background: #f9f7f3;"><td colspan="6" style="font-weight:700; font-size:0.74rem; color:var(--blp-muted); letter-spacing:0.05em;">MACRO INDICATORS</td></tr>
+          <tr><td>CNY/USD (avg)</td><td>rate</td><td class="num">6.73</td><td class="num">7.08</td><td class="num">7.10</td><td>PBoC</td></tr>
+          <tr><td>EUR/USD (avg)</td><td>rate</td><td class="num">0.95</td><td class="num">0.92</td><td class="num">0.92</td><td>ECB</td></tr>
+          <tr><td>CN Mfg Wage Index</td><td>2020=100</td><td class="num">112.3</td><td class="num">118.5</td><td class="num">124.0</td><td>NBS China</td></tr>
+          <tr><td>FR Mfg Wage Index</td><td>2020=100</td><td class="num">108.6</td><td class="num">114.2</td><td class="num">118.5</td><td>INSEE</td></tr>
+          <tr><td>CN PV Import Tariff</td><td>%</td><td class="num">15.0</td><td class="num">15.0</td><td class="num">15.0</td><td>China Customs</td></tr>
+          <tr><td>EU PV Tariff (std)</td><td>%</td><td class="num">10.0</td><td class="num">10.0</td><td class="num">10.0</td><td>EU Commission</td></tr>
+          <tr><td>EU BEV Anti-Subsidy (CN)</td><td>%</td><td class="num">0.0</td><td class="num">0.0</td><td class="num">17.4</td><td>EU Commission</td></tr>
+          <tr><td>CN NEV Tax Exemption</td><td>CNY max</td><td class="num">30,000</td><td class="num">30,000</td><td class="num">30,000</td><td>MOF China</td></tr>
+          <tr><td>FR Bonus Écologique</td><td>EUR max</td><td class="num">6,000</td><td class="num">5,000</td><td class="num">4,000</td><td>Min. Trans. Éco.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════ -->
+  <!-- TAB 5: ESTIMATION               -->
+  <!-- ══════════════════════════════ -->
+  <div class="blp-panel" id="panel-estimation">
+
+    <div class="blp-section-header">
+      <h3>BLP Estimation</h3>
+      <span class="badge badge-both">Simplified logit · 2024</span>
+    </div>
+
+    <p style="font-size: 0.9rem; line-height: 1.65; margin-bottom: 1.5rem;">
+      Preliminary results from a simplified logit specification (no random coefficients). The full random-coefficients BLP with contraction mapping is planned using PyBLP (Conlon &amp; Gortmaker, 2020).
+    </p>
+
+    <div class="param-grid">
+      <div class="param-card" style="border-top: 3px solid var(--blp-accent);">
+        <h4>BLP Utility Parameters (IFM Dataset)</h4>
+        <div class="param-row"><span class="param-name">α (price sensitivity)</span><span class="param-val">0.080</span></div>
+        <div class="param-row"><span class="param-name">β<sub>hp</sub></span><span class="param-val">0.005</span></div>
+        <div class="param-row"><span class="param-name">β<sub>fuel</sub></span><span class="param-val">−0.150</span></div>
+        <div class="param-row"><span class="param-name">β<sub>wheelbase</sub></span><span class="param-val">0.300</span></div>
+        <div class="param-row"><span class="param-name">β<sub>safety</sub></span><span class="param-val">0.400</span></div>
+        <div class="param-row"><span class="param-name">β<sub>tech</sub></span><span class="param-val">0.200</span></div>
+      </div>
+      <div class="param-card" style="border-top: 3px solid var(--blp-blue);">
+        <h4>Hedonic Regression: ln(p) = Xβ + ε</h4>
+        <div class="param-row"><span class="param-name">Constant</span><span class="param-val">−9.140</span></div>
+        <div class="param-row"><span class="param-name">HP / 100</span><span class="param-val">0.014</span></div>
+        <div class="param-row"><span class="param-name">Fuel consumption</span><span class="param-val">0.085</span></div>
+        <div class="param-row"><span class="param-name">Wheelbase / 1000</span><span class="param-val">2.927</span></div>
+        <div class="param-row"><span class="param-name">Weight / 1000</span><span class="param-val">1.083</span></div>
+        <div class="param-row"><span class="param-name">Safety (1–5)</span><span class="param-val">0.267</span></div>
+        <div class="param-row"><span class="param-name">Tech / 10</span><span class="param-val">0.379</span></div>
+        <div class="param-row"><span class="param-name">R²</span><span class="param-val" style="color:var(--blp-green);">0.928</span></div>
+      </div>
+    </div>
+
+    <div class="chart-grid">
+      <div class="chart-card chart-card-full">
+        <h4>λ<sub>jt</sub> (Price/Utility Ratio) by Category — 2022</h4>
+        <canvas id="chartLambda" height="180"></canvas>
+      </div>
+    </div>
+
+    <div class="method-note">
+      <strong>Estimation roadmap:</strong>
+      Step 1 ✓ Compute market shares and δ<sub>jt</sub> = ln(s<sub>j</sub>) − ln(s<sub>0</sub>).
+      Step 2 ✓ Specify utility: u<sub>ijt</sub> = x·β − α·p + ξ.
+      Step 3 → Contraction mapping for mean utilities (PyBLP).
+      Step 4 → IV-GMM: E[Z'·ξ] = 0.
+      Step 5 → Search over σ (random coefficients).
+      Step 6 → Integrate IFM and estimate γ.
+    </div>
+  </div>
+
 </section>
 
 <footer>
@@ -176,7 +726,443 @@
   </div>
 </footer>
 
+<!-- ═══════════════════════════════════════════════════════════════ -->
+<!-- DATA + SCRIPTS                                                  -->
+<!-- ═══════════════════════════════════════════════════════════════ -->
 <script>
+// ── DATA ────────────────────────────────────────────────────────
+const chinaData = [
+  {rank:1, model:"BYD Song (Plus/Pro/L)", brand:"BYD", group:"BYD", segment:"SUV", fuel:"PHEV/BEV", s2024:574351, s2023:390213, s2022:418000, price:129.8, hp:150, torque:310, weight:1780, length:4705, width:1890, height:1680, wb:2712, eng:1.5, eff:5.9, bat:18.3, range:1100, seats:5},
+  {rank:2, model:"Tesla Model Y", brand:"Tesla", group:"Tesla", segment:"SUV", fuel:"BEV", s2024:480309, s2023:456394, s2022:315000, price:249.9, hp:299, torque:340, weight:1979, length:4750, width:1921, height:1624, wb:2890, eng:0, eff:0, bat:60, range:554, seats:5},
+  {rank:3, model:"BYD Qin Plus", brand:"BYD", group:"BYD", segment:"Sedan", fuel:"PHEV/BEV", s2024:480025, s2023:434213, s2022:340000, price:99.8, hp:136, torque:231, weight:1550, length:4765, width:1837, height:1495, wb:2718, eng:1.5, eff:3.8, bat:18.3, range:1245, seats:5},
+  {rank:4, model:"BYD Seagull", brand:"BYD", group:"BYD", segment:"Hatchback", fuel:"BEV", s2024:453593, s2023:100000, s2022:0, price:73.8, hp:75, torque:135, weight:1160, length:3780, width:1715, height:1540, wb:2500, eng:0, eff:0, bat:30.08, range:305, seats:5},
+  {rank:5, model:"Nissan Sylphy", brand:"Nissan", group:"Nissan", segment:"Sedan", fuel:"ICE", s2024:342395, s2023:378000, s2022:420000, price:114.9, hp:139, torque:196, weight:1375, length:4641, width:1815, height:1447, wb:2712, eng:1.6, eff:6.1, bat:0, range:0, seats:5},
+  {rank:6, model:"VW Lavida", brand:"Volkswagen", group:"VW Group", segment:"Sedan", fuel:"ICE", s2024:322933, s2023:345000, s2022:360000, price:109.9, hp:116, torque:200, weight:1370, length:4670, width:1806, height:1474, wb:2688, eng:1.4, eff:5.5, bat:0, range:0, seats:5},
+  {rank:7, model:"Toyota Corolla", brand:"Toyota", group:"Toyota", segment:"Sedan", fuel:"ICE/HEV", s2024:282433, s2023:326000, s2022:340000, price:117.8, hp:121, torque:148, weight:1395, length:4635, width:1780, height:1455, wb:2700, eng:1.8, eff:4, bat:0, range:0, seats:5},
+  {rank:8, model:"BYD Yuan Plus", brand:"BYD", group:"BYD", segment:"SUV", fuel:"BEV", s2024:275223, s2023:310000, s2022:250000, price:129.8, hp:204, torque:310, weight:1680, length:4455, width:1875, height:1615, wb:2720, eng:0, eff:0, bat:49.92, range:430, seats:5},
+  {rank:9, model:"Wuling Mini EV", brand:"Wuling", group:"SAIC-GM-Wuling", segment:"Microcar", fuel:"BEV", s2024:263000, s2023:200000, s2022:280000, price:32.8, hp:30, torque:110, weight:700, length:2920, width:1493, height:1621, wb:1940, eng:0, eff:0, bat:13.9, range:120, seats:4},
+  {rank:10, model:"BYD Song Pro", brand:"BYD", group:"BYD", segment:"SUV", fuel:"PHEV/BEV", s2024:248000, s2023:215000, s2022:180000, price:109.8, hp:150, torque:310, weight:1700, length:4650, width:1860, height:1700, wb:2712, eng:1.5, eff:5.9, bat:18.3, range:1090, seats:5},
+  {rank:11, model:"VW Passat", brand:"Volkswagen", group:"VW Group", segment:"Sedan", fuel:"ICE", s2024:238000, s2023:190000, s2022:160000, price:189.9, hp:186, torque:320, weight:1540, length:4935, width:1836, height:1469, wb:2871, eng:2, eff:6.3, bat:0, range:0, seats:5},
+  {rank:12, model:"BYD Qin L", brand:"BYD", group:"BYD", segment:"Sedan", fuel:"PHEV", s2024:230000, s2023:0, s2022:0, price:99.8, hp:136, torque:231, weight:1580, length:4830, width:1900, height:1495, wb:2790, eng:1.5, eff:3.8, bat:15.87, range:1300, seats:5},
+  {rank:13, model:"BYD Han", brand:"BYD", group:"BYD", segment:"Sedan", fuel:"PHEV/BEV", s2024:220000, s2023:219000, s2022:230000, price:179.8, hp:222, torque:330, weight:1930, length:4995, width:1910, height:1495, wb:2920, eng:1.5, eff:4.2, bat:65.12, range:605, seats:5},
+  {rank:14, model:"Changan CS75 Plus", brand:"Changan", group:"Changan", segment:"SUV", fuel:"ICE", s2024:210000, s2023:240000, s2022:270000, price:109.9, hp:188, torque:300, weight:1605, length:4700, width:1865, height:1710, wb:2710, eng:1.5, eff:6.8, bat:0, range:0, seats:5},
+  {rank:15, model:"BYD Seal 06", brand:"BYD", group:"BYD", segment:"Sedan", fuel:"PHEV", s2024:194000, s2023:0, s2022:0, price:109.8, hp:136, torque:231, weight:1600, length:4830, width:1875, height:1495, wb:2790, eng:1.5, eff:3.8, bat:15.87, range:1280, seats:5},
+  {rank:16, model:"Geely Emgrand", brand:"Geely", group:"Geely", segment:"Sedan", fuel:"ICE/PHEV", s2024:192000, s2023:180000, s2022:200000, price:79.8, hp:133, torque:206, weight:1350, length:4638, width:1820, height:1460, wb:2650, eng:1.5, eff:5.9, bat:0, range:0, seats:5},
+  {rank:17, model:"AITO M7", brand:"AITO", group:"Huawei/Seres", segment:"SUV", fuel:"EREV", s2024:193342, s2023:40000, s2022:10000, price:249.8, hp:200, torque:360, weight:2165, length:5020, width:1945, height:1760, wb:2820, eng:1.5, eff:5.8, bat:40, range:1100, seats:6},
+  {rank:18, model:"Toyota Camry", brand:"Toyota", group:"Toyota", segment:"Sedan", fuel:"ICE/HEV", s2024:185000, s2023:200000, s2022:220000, price:179.8, hp:178, torque:221, weight:1580, length:4885, width:1840, height:1445, wb:2825, eng:2.5, eff:4.1, bat:0, range:0, seats:5},
+  {rank:19, model:"Honda CR-V", brand:"Honda", group:"Honda", segment:"SUV", fuel:"ICE/HEV", s2024:180000, s2023:213000, s2022:230000, price:189.8, hp:193, torque:243, weight:1680, length:4703, width:1866, height:1680, wb:2700, eng:1.5, eff:6.4, bat:0, range:0, seats:5},
+  {rank:20, model:"VW Sagitar", brand:"Volkswagen", group:"VW Group", segment:"Sedan", fuel:"ICE", s2024:175000, s2023:190000, s2022:200000, price:129.9, hp:150, torque:250, weight:1380, length:4791, width:1854, height:1469, wb:2731, eng:1.4, eff:5.5, bat:0, range:0, seats:5},
+  {rank:21, model:"Haval H6", brand:"Haval", group:"Great Wall", segment:"SUV", fuel:"ICE/PHEV", s2024:172000, s2023:210000, s2022:260000, price:109.9, hp:169, torque:285, weight:1635, length:4653, width:1886, height:1730, wb:2738, eng:1.5, eff:6.6, bat:0, range:0, seats:5},
+  {rank:22, model:"Toyota RAV4", brand:"Toyota", group:"Toyota", segment:"SUV", fuel:"ICE/HEV", s2024:168000, s2023:150000, s2022:160000, price:179.8, hp:178, torque:221, weight:1625, length:4600, width:1855, height:1680, wb:2690, eng:2.5, eff:4.7, bat:0, range:0, seats:5},
+  {rank:23, model:"Li L6", brand:"Li Auto", group:"Li Auto", segment:"SUV", fuel:"EREV", s2024:165000, s2023:0, s2022:0, price:249.8, hp:180, torque:300, weight:2145, length:4925, width:1960, height:1750, wb:2920, eng:1.5, eff:6.9, bat:39.86, range:1050, seats:5},
+  {rank:24, model:"Chery Tiggo 8 Pro", brand:"Chery", group:"Chery", segment:"SUV", fuel:"ICE", s2024:162000, s2023:140000, s2022:120000, price:119.9, hp:197, torque:290, weight:1720, length:4745, width:1860, height:1745, wb:2710, eng:1.6, eff:7.2, bat:0, range:0, seats:7},
+  {rank:25, model:"VW Tayron", brand:"Volkswagen", group:"VW Group", segment:"SUV", fuel:"ICE", s2024:160000, s2023:125000, s2022:140000, price:219.9, hp:186, torque:320, weight:1720, length:4712, width:1839, height:1673, wb:2791, eng:2, eff:7.1, bat:0, range:0, seats:5},
+  {rank:26, model:"BYD Destroyer 05", brand:"BYD", group:"BYD", segment:"Sedan", fuel:"PHEV", s2024:158000, s2023:62000, s2022:50000, price:89.8, hp:136, torque:231, weight:1530, length:4780, width:1837, height:1495, wb:2718, eng:1.5, eff:3.8, bat:18.3, range:1200, seats:5},
+  {rank:27, model:"Honda Civic", brand:"Honda", group:"Honda", segment:"Sedan", fuel:"ICE/HEV", s2024:155000, s2023:177000, s2022:200000, price:129.9, hp:182, torque:240, weight:1400, length:4674, width:1802, height:1415, wb:2735, eng:1.5, eff:5.6, bat:0, range:0, seats:5},
+  {rank:28, model:"BYD Yuan UP", brand:"BYD", group:"BYD", segment:"SUV", fuel:"BEV", s2024:135000, s2023:0, s2022:0, price:99.8, hp:130, torque:210, weight:1530, length:4310, width:1830, height:1595, wb:2620, eng:0, eff:0, bat:45.44, range:401, seats:5},
+  {rank:29, model:"Buick Excelle", brand:"Buick", group:"GM", segment:"Sedan", fuel:"ICE", s2024:134000, s2023:150000, s2022:170000, price:89.9, hp:120, torque:200, weight:1340, length:4609, width:1798, height:1464, wb:2640, eng:1.3, eff:5.3, bat:0, range:0, seats:5},
+  {rank:30, model:"Xiaomi SU7", brand:"Xiaomi", group:"Xiaomi", segment:"Sedan", fuel:"BEV", s2024:139500, s2023:0, s2022:0, price:215.9, hp:299, torque:400, weight:1980, length:4997, width:1963, height:1440, wb:3000, eng:0, eff:0, bat:73.6, range:668, seats:5},
+  {rank:31, model:"Li L7", brand:"Li Auto", group:"Li Auto", segment:"SUV", fuel:"EREV", s2024:132000, s2023:137000, s2022:40000, price:339.8, hp:180, torque:300, weight:2260, length:5050, width:1995, height:1750, wb:3005, eng:1.5, eff:7.1, bat:42.8, range:1100, seats:6},
+  {rank:32, model:"Li L8", brand:"Li Auto", group:"Li Auto", segment:"SUV", fuel:"EREV", s2024:125000, s2023:120000, s2022:50000, price:359.8, hp:180, torque:300, weight:2350, length:5080, width:1995, height:1800, wb:3005, eng:1.5, eff:7.3, bat:42.8, range:1100, seats:6},
+  {rank:33, model:"Geely Boyue", brand:"Geely", group:"Geely", segment:"SUV", fuel:"ICE/PHEV", s2024:120000, s2023:130000, s2022:150000, price:99.8, hp:181, torque:290, weight:1560, length:4544, width:1831, height:1713, wb:2670, eng:1.5, eff:6.7, bat:0, range:0, seats:5},
+  {rank:34, model:"VW ID.3", brand:"Volkswagen", group:"VW Group", segment:"Hatchback", fuel:"BEV", s2024:118000, s2023:95000, s2022:25000, price:129.9, hp:170, torque:310, weight:1750, length:4261, width:1809, height:1568, wb:2765, eng:0, eff:0, bat:57.3, range:450, seats:5},
+  {rank:35, model:"Honda Accord", brand:"Honda", group:"Honda", segment:"Sedan", fuel:"ICE/HEV", s2024:115000, s2023:178000, s2022:190000, price:179.8, hp:204, torque:335, weight:1580, length:4906, width:1862, height:1449, wb:2830, eng:1.5, eff:5.7, bat:0, range:0, seats:5},
+  {rank:36, model:"BMW 3 Series", brand:"BMW", group:"BMW", segment:"Sedan", fuel:"ICE", s2024:112000, s2023:145000, s2022:155000, price:299.9, hp:184, torque:300, weight:1595, length:4829, width:1827, height:1463, wb:2961, eng:2, eff:6.2, bat:0, range:0, seats:5},
+  {rank:37, model:"Toyota Levin", brand:"Toyota", group:"Toyota", segment:"Sedan", fuel:"ICE/HEV", s2024:110000, s2023:120000, s2022:140000, price:117.8, hp:121, torque:148, weight:1370, length:4640, width:1780, height:1455, wb:2700, eng:1.8, eff:4, bat:0, range:0, seats:5},
+  {rank:38, model:"Mercedes C-Class", brand:"Mercedes", group:"Mercedes", segment:"Sedan", fuel:"ICE", s2024:108000, s2023:130000, s2022:140000, price:329.7, hp:258, torque:370, weight:1680, length:4882, width:1820, height:1461, wb:2954, eng:2, eff:6.8, bat:0, range:0, seats:5},
+  {rank:39, model:"Audi A4L", brand:"Audi", group:"VW Group", segment:"Sedan", fuel:"ICE", s2024:105000, s2023:125000, s2022:135000, price:329.8, hp:252, torque:370, weight:1650, length:4858, width:1847, height:1439, wb:2908, eng:2, eff:6.5, bat:0, range:0, seats:5},
+  {rank:40, model:"VW Tharu", brand:"Volkswagen", group:"VW Group", segment:"SUV", fuel:"ICE", s2024:103000, s2023:110000, s2022:130000, price:129.9, hp:150, torque:250, weight:1460, length:4453, width:1841, height:1620, wb:2680, eng:1.4, eff:5.9, bat:0, range:0, seats:5},
+  {rank:41, model:"NIO ES6", brand:"NIO", group:"NIO", segment:"SUV", fuel:"BEV", s2024:100000, s2023:80000, s2022:55000, price:358, hp:490, torque:700, weight:2285, length:4854, width:1995, height:1703, wb:2915, eng:0, eff:0, bat:75, range:490, seats:5},
+  {rank:42, model:"Tesla Model 3", brand:"Tesla", group:"Tesla", segment:"Sedan", fuel:"BEV", s2024:98000, s2023:120000, s2022:150000, price:231.9, hp:283, torque:340, weight:1836, length:4720, width:1848, height:1442, wb:2875, eng:0, eff:0, bat:60, range:567, seats:5},
+  {rank:43, model:"BYD Tang", brand:"BYD", group:"BYD", segment:"SUV", fuel:"PHEV/BEV", s2024:96000, s2023:95000, s2022:110000, price:209.8, hp:252, torque:390, weight:2200, length:4870, width:1940, height:1720, wb:2820, eng:1.5, eff:6.5, bat:21.5, range:1012, seats:7},
+  {rank:44, model:"VW Teramont", brand:"Volkswagen", group:"VW Group", segment:"SUV", fuel:"ICE", s2024:95000, s2023:85000, s2022:80000, price:299.9, hp:220, torque:350, weight:2020, length:5152, width:1989, height:1773, wb:2980, eng:2.5, eff:8.6, bat:0, range:0, seats:7},
+  {rank:45, model:"Chery Tiggo 7 Pro", brand:"Chery", group:"Chery", segment:"SUV", fuel:"ICE", s2024:94000, s2023:100000, s2022:90000, price:99.9, hp:156, torque:230, weight:1510, length:4500, width:1842, height:1746, wb:2670, eng:1.5, eff:6.6, bat:0, range:0, seats:5},
+  {rank:46, model:"Geely Xingyue L", brand:"Geely", group:"Geely", segment:"SUV", fuel:"ICE/PHEV", s2024:92000, s2023:85000, s2022:95000, price:139.8, hp:238, torque:350, weight:1750, length:4770, width:1895, height:1689, wb:2845, eng:2, eff:7, bat:0, range:0, seats:5},
+  {rank:47, model:"BYD Dolphin", brand:"BYD", group:"BYD", segment:"Hatchback", fuel:"BEV", s2024:90000, s2023:150000, s2022:100000, price:99.8, hp:130, torque:180, weight:1405, length:4290, width:1770, height:1570, wb:2700, eng:0, eff:0, bat:44.9, range:401, seats:5},
+  {rank:48, model:"Leapmotor C11", brand:"Leapmotor", group:"Leapmotor", segment:"SUV", fuel:"BEV/EREV", s2024:88000, s2023:50000, s2022:30000, price:159.8, hp:200, torque:320, weight:1870, length:4780, width:1905, height:1675, wb:2930, eng:0, eff:0, bat:76.6, range:500, seats:5},
+  {rank:49, model:"BYD Song L", brand:"BYD", group:"BYD", segment:"SUV", fuel:"BEV", s2024:85000, s2023:2000, s2022:0, price:189.8, hp:204, torque:310, weight:2050, length:4840, width:1950, height:1560, wb:2930, eng:0, eff:0, bat:71.8, range:550, seats:5},
+  {rank:50, model:"Xpeng G6", brand:"Xpeng", group:"Xpeng", segment:"SUV", fuel:"BEV", s2024:82000, s2023:60000, s2022:15000, price:209.9, hp:296, torque:440, weight:2015, length:4753, width:1920, height:1650, wb:2890, eng:0, eff:0, bat:66, range:530, seats:5}
+];
+
+const franceData = [
+  {rank:1, model:"Renault Clio V", brand:"Renault", group:"Renault Group", segment:"Hatchback", fuel:"ICE/HEV", s2024:91435, s2023:97471, s2022:64012, price:19.5, hp:91, torque:160, weight:1200, length:4050, width:1798, height:1440, wb:2583, eng:1, eff:4.3, bat:0, range:0, seats:5},
+  {rank:2, model:"Peugeot 208 II", brand:"Peugeot", group:"Stellantis", segment:"Hatchback", fuel:"ICE/BEV", s2024:88918, s2023:86263, s2022:88812, price:20.2, hp:101, torque:205, weight:1180, length:4055, width:1745, height:1430, wb:2540, eng:1.2, eff:4.7, bat:50, range:362, seats:5},
+  {rank:3, model:"Dacia Sandero III", brand:"Dacia", group:"Renault Group", segment:"Hatchback", fuel:"ICE/LPG", s2024:75978, s2023:69106, s2022:64293, price:11.9, hp:91, torque:160, weight:1090, length:4088, width:1761, height:1494, wb:2604, eng:1, eff:4.8, bat:0, range:0, seats:5},
+  {rank:4, model:"Peugeot 2008 II", brand:"Peugeot", group:"Stellantis", segment:"SUV", fuel:"ICE/BEV", s2024:48547, s2023:49344, s2022:51454, price:27.5, hp:131, torque:230, weight:1335, length:4300, width:1770, height:1530, wb:2605, eng:1.2, eff:5.2, bat:50, range:340, seats:5},
+  {rank:5, model:"Renault Captur II", brand:"Renault", group:"Renault Group", segment:"SUV", fuel:"ICE/HEV", s2024:45961, s2023:47569, s2022:45577, price:25.3, hp:91, torque:160, weight:1350, length:4227, width:1797, height:1576, wb:2639, eng:1, eff:4.8, bat:0, range:0, seats:5},
+  {rank:6, model:"Citroen C3 III", brand:"Citroen", group:"Stellantis", segment:"Hatchback", fuel:"ICE", s2024:38834, s2023:59603, s2022:58880, price:17.1, hp:83, torque:118, weight:1070, length:3996, width:1749, height:1474, wb:2540, eng:1.2, eff:4.9, bat:0, range:0, seats:5},
+  {rank:7, model:"Peugeot 308 III", brand:"Peugeot", group:"Stellantis", segment:"Hatchback", fuel:"ICE/PHEV", s2024:37254, s2023:45564, s2022:41656, price:29.2, hp:131, torque:230, weight:1330, length:4367, width:1852, height:1441, wb:2675, eng:1.2, eff:4.6, bat:12.4, range:60, seats:5},
+  {rank:8, model:"Toyota Yaris", brand:"Toyota", group:"Toyota", segment:"Hatchback", fuel:"HEV", s2024:35065, s2023:28835, s2022:31115, price:23.2, hp:116, torque:120, weight:1085, length:3940, width:1745, height:1500, wb:2560, eng:1.5, eff:3.8, bat:0, range:0, seats:5},
+  {rank:9, model:"Toyota Yaris Cross", brand:"Toyota", group:"Toyota", segment:"SUV", fuel:"HEV", s2024:33810, s2023:31073, s2022:23577, price:28.9, hp:116, torque:120, weight:1250, length:4180, width:1765, height:1595, wb:2560, eng:1.5, eff:4.4, bat:0, range:0, seats:5},
+  {rank:10, model:"Tesla Model Y", brand:"Tesla", group:"Tesla", segment:"SUV", fuel:"BEV", s2024:28577, s2023:37127, s2022:11892, price:44.9, hp:299, torque:340, weight:1979, length:4750, width:1921, height:1624, wb:2890, eng:0, eff:0, bat:60, range:533, seats:5},
+  {rank:11, model:"Renault Austral", brand:"Renault", group:"Renault Group", segment:"SUV", fuel:"HEV", s2024:26150, s2023:29894, s2022:3318, price:33.4, hp:160, torque:230, weight:1500, length:4510, width:1825, height:1620, wb:2667, eng:1.2, eff:4.6, bat:0, range:0, seats:5},
+  {rank:12, model:"VW Polo VI", brand:"Volkswagen", group:"VW Group", segment:"Hatchback", fuel:"ICE", s2024:25163, s2023:26117, s2022:18215, price:22.6, hp:95, torque:175, weight:1175, length:4074, width:1751, height:1451, wb:2564, eng:1, eff:5, bat:0, range:0, seats:5},
+  {rank:13, model:"Dacia Duster III", brand:"Dacia", group:"Renault Group", segment:"SUV", fuel:"ICE/HEV", s2024:23511, s2023:0, s2022:0, price:19.9, hp:131, torque:230, weight:1360, length:4343, width:1813, height:1657, wb:2657, eng:1.2, eff:5.1, bat:0, range:0, seats:5},
+  {rank:14, model:"Peugeot 3008 III", brand:"Peugeot", group:"Stellantis", segment:"SUV", fuel:"ICE/BEV", s2024:22344, s2023:30370, s2022:36281, price:37.7, hp:136, torque:230, weight:1590, length:4542, width:1895, height:1641, wb:2740, eng:1.2, eff:5, bat:73, range:525, seats:5},
+  {rank:15, model:"Dacia Jogger", brand:"Dacia", group:"Renault Group", segment:"MPV", fuel:"ICE/HEV", s2024:21969, s2023:24888, s2022:15379, price:17.5, hp:110, torque:200, weight:1310, length:4547, width:1784, height:1632, wb:2897, eng:1, eff:5.1, bat:0, range:0, seats:7}
+];
+
+// BLP Variables data
+const blpChina = [
+  {model:"BYD Song (Plus/Pro/L)", brand:"BYD", share:0.024693, delta:-3.187, priceInc:2.596, hpWt:0.0843, size:8.893, mpg:39.87, ev:1, suv:1, rivP:186.07, rivHP:194.78, rivSz:8.783, ownP:124.3, ownHP:159.25, ownSz:8.597, nOwn:12, nRiv:37},
+  {model:"Tesla Model Y", brand:"Tesla", share:0.020650, delta:-3.365, priceInc:4.998, hpWt:0.1511, size:9.125, mpg:99, ev:1, suv:1, rivP:167.17, rivHP:180.96, rivSz:8.733, ownP:231.9, ownHP:283, ownSz:8.723, nOwn:1, nRiv:48},
+  {model:"BYD Qin Plus", brand:"BYD", share:0.020637, delta:-3.366, priceInc:1.996, hpWt:0.0877, size:8.753, mpg:61.9, ev:1, suv:0, rivP:186.07, rivHP:194.78, rivSz:8.783, ownP:126.8, ownHP:160.42, ownSz:8.608, nOwn:12, nRiv:37},
+  {model:"BYD Seagull", brand:"BYD", share:0.019501, delta:-3.423, priceInc:1.476, hpWt:0.0647, size:6.483, mpg:99, ev:1, suv:0, rivP:186.07, rivHP:194.78, rivSz:8.783, ownP:128.97, ownHP:165.5, ownSz:8.797, nOwn:12, nRiv:37},
+  {model:"Nissan Sylphy", brand:"Nissan", share:0.014720, delta:-3.704, priceInc:2.298, hpWt:0.1011, size:8.423, mpg:38.56, ev:0, suv:0, rivP:171.25, rivHP:186.31, rivSz:8.747, ownP:0, ownHP:0, ownSz:0, nOwn:0, nRiv:49}
+];
+const blpFrance = [
+  {model:"Renault Clio V", brand:"Renault", share:0.053209, delta:-1.866, priceInc:0.780, hpWt:0.0758, size:7.282, mpg:54.7, ev:0, suv:0, rivP:30.27, rivHP:137.92, rivSz:7.787, ownP:25.62, ownHP:135.73, ownSz:7.767, nOwn:11, nRiv:38},
+  {model:"Peugeot 208 II", brand:"Peugeot", share:0.051744, delta:-1.894, priceInc:0.808, hpWt:0.0856, size:7.076, mpg:50.05, ev:1, suv:0, rivP:29.77, rivHP:143.69, rivSz:7.840, ownP:27.81, ownHP:121.07, ownSz:7.655, nOwn:14, nRiv:35},
+  {model:"Dacia Sandero III", brand:"Dacia", share:0.044214, delta:-2.051, priceInc:0.476, hpWt:0.0835, size:7.199, mpg:49, ev:0, suv:0, rivP:30.27, rivHP:137.92, rivSz:7.787, ownP:26.31, ownHP:135.73, ownSz:7.775, nOwn:11, nRiv:38},
+  {model:"Peugeot 2008 II", brand:"Peugeot", share:0.028251, delta:-2.499, priceInc:1.100, hpWt:0.0981, size:7.611, mpg:45.23, ev:1, suv:1, rivP:29.77, rivHP:143.69, rivSz:7.840, ownP:27.29, ownHP:118.93, ownSz:7.616, nOwn:14, nRiv:35},
+  {model:"Renault Captur II", brand:"Renault", share:0.026746, delta:-2.554, priceInc:1.012, hpWt:0.0674, size:7.596, mpg:49, ev:0, suv:1, rivP:30.27, rivHP:137.92, rivSz:7.787, ownP:25.09, ownHP:135.73, ownSz:7.739, nOwn:11, nRiv:38}
+];
+
+// IFM data
+const ifmData = [
+  {brand:"BMW",j:1,model:"3 Series",cat:"Foreign Luxury",year:2018,phi:0.7278,psi:0.0179,lam:0.7109,ifmH:0.3728,ifmB:0.7193,ifmA:0.5461,rank:29},
+  {brand:"Mercedes",j:2,model:"C-Class",cat:"Foreign Luxury",year:2018,phi:0.7676,psi:0.1422,lam:0.7504,ifmH:0.4549,ifmB:0.759,ifmA:0.607,rank:15},
+  {brand:"Audi",j:3,model:"A4L",cat:"Foreign Luxury",year:2018,phi:0.719,psi:0.1198,lam:0.6213,ifmH:0.4194,ifmB:0.6701,ifmA:0.5448,rank:30},
+  {brand:"BMW",j:17,model:"X3",cat:"Foreign Luxury",year:2018,phi:0.721,psi:0.3157,lam:0.9715,ifmH:0.5183,ifmB:0.8462,ifmA:0.6823,rank:4},
+  {brand:"BMW",j:17,model:"X3",cat:"Foreign Luxury",year:2019,phi:0.7134,psi:0.3295,lam:0.9799,ifmH:0.5215,ifmB:0.8467,ifmA:0.6841,rank:3},
+  {brand:"BMW",j:17,model:"X3",cat:"Foreign Luxury",year:2020,phi:0.7539,psi:0.3618,lam:1.0000,ifmH:0.5578,ifmB:0.8769,ifmA:0.7174,rank:2},
+  {brand:"BMW",j:17,model:"X3",cat:"Foreign Luxury",year:2021,phi:0.7434,psi:0.2665,lam:0.9421,ifmH:0.5049,ifmB:0.8427,ifmA:0.6738,rank:5},
+  {brand:"BMW",j:17,model:"X3",cat:"Foreign Luxury",year:2022,phi:0.8549,psi:0.3155,lam:0.9713,ifmH:0.5852,ifmB:0.9131,ifmA:0.7491,rank:1},
+  {brand:"Tesla",j:18,model:"Model Y",cat:"EV Premium",year:2018,phi:0.4898,psi:0.1377,lam:0.3099,ifmH:0.3137,ifmB:0.3999,ifmA:0.3568,rank:69},
+  {brand:"Tesla",j:18,model:"Model Y",cat:"EV Premium",year:2022,phi:0.5817,psi:0.2256,lam:0.4144,ifmH:0.4036,ifmB:0.4981,ifmA:0.4509,rank:46},
+  {brand:"BYD",j:19,model:"Song Plus",cat:"Domestic Mass",year:2018,phi:0.391,psi:0.7423,lam:0.1242,ifmH:0.5666,ifmB:0.2576,ifmA:0.4121,rank:57},
+  {brand:"BYD",j:19,model:"Song Plus",cat:"Domestic Mass",year:2022,phi:0.3667,psi:0.7652,lam:0.1279,ifmH:0.566,ifmB:0.2473,ifmA:0.4066,rank:59},
+  {brand:"Haval",j:20,model:"H6",cat:"Domestic Mass",year:2018,phi:0.2526,psi:0.9408,lam:0.084,ifmH:0.5967,ifmB:0.1683,ifmA:0.3825,rank:67},
+  {brand:"Haval",j:20,model:"H6",cat:"Domestic Mass",year:2022,phi:0.4828,psi:0.9333,lam:0.0847,ifmH:0.708,ifmB:0.2837,ifmA:0.4959,rank:40},
+  {brand:"Geely",j:14,model:"Emgrand",cat:"Domestic Mass",year:2022,phi:0.4072,psi:0.3124,lam:0.044,ifmH:0.3598,ifmB:0.2256,ifmA:0.2927,rank:84},
+  {brand:"BYD",j:11,model:"Han EV",cat:"Domestic Premium",year:2022,phi:0.7358,psi:0.7075,lam:0.2942,ifmH:0.7217,ifmB:0.515,ifmA:0.6183,rank:13},
+  {brand:"NIO",j:12,model:"ET5",cat:"Domestic Premium",year:2022,phi:0.6604,psi:0.0926,lam:0.3325,ifmH:0.3765,ifmB:0.4965,ifmA:0.4365,rank:51},
+  {brand:"Xpeng",j:13,model:"P7",cat:"Domestic Premium",year:2022,phi:0.7084,psi:0.2821,lam:0.3686,ifmH:0.4952,ifmB:0.5385,ifmA:0.5168,rank:37}
+];
+
+// IFM synthesis by category/year
+const ifmSynthesis = [
+  {cat:"Foreign Luxury", year:2018, phi:0.7063, psi:0.1843, lam:0.7028, ifmH:0.4453, ifmB:0.7045, ifmA:0.5749},
+  {cat:"Foreign Luxury", year:2019, phi:0.7284, psi:0.2713, lam:0.7037, ifmH:0.4998, ifmB:0.7161, ifmA:0.6080},
+  {cat:"Foreign Luxury", year:2020, phi:0.7160, psi:0.1944, lam:0.6955, ifmH:0.4552, ifmB:0.7058, ifmA:0.5805},
+  {cat:"Foreign Luxury", year:2021, phi:0.6908, psi:0.2374, lam:0.6955, ifmH:0.4641, ifmB:0.6931, ifmA:0.5786},
+  {cat:"Foreign Luxury", year:2022, phi:0.8663, psi:0.2068, lam:0.7070, ifmH:0.5365, ifmB:0.7866, ifmA:0.6616},
+  {cat:"JV Mass", year:2018, phi:0.4932, psi:0.2375, lam:0.2834, ifmH:0.3654, ifmB:0.3883, ifmA:0.3768},
+  {cat:"JV Mass", year:2019, phi:0.5114, psi:0.2414, lam:0.2976, ifmH:0.3764, ifmB:0.4045, ifmA:0.3904},
+  {cat:"JV Mass", year:2020, phi:0.5757, psi:0.2122, lam:0.2903, ifmH:0.3939, ifmB:0.4330, ifmA:0.4135},
+  {cat:"JV Mass", year:2021, phi:0.5860, psi:0.2806, lam:0.3049, ifmH:0.4333, ifmB:0.4454, ifmA:0.4394},
+  {cat:"JV Mass", year:2022, phi:0.5694, psi:0.2430, lam:0.2825, ifmH:0.4062, ifmB:0.4259, ifmA:0.4160},
+  {cat:"Domestic Premium", year:2020, phi:0.7239, psi:0.3940, lam:0.3141, ifmH:0.5589, ifmB:0.5190, ifmA:0.5390},
+  {cat:"Domestic Premium", year:2021, phi:0.7515, psi:0.4335, lam:0.3233, ifmH:0.5925, ifmB:0.5374, ifmA:0.5650},
+  {cat:"Domestic Premium", year:2022, phi:0.7015, psi:0.3607, lam:0.3318, ifmH:0.5311, ifmB:0.5166, ifmA:0.5239},
+  {cat:"Domestic Mass", year:2018, phi:0.3840, psi:0.5293, lam:0.0615, ifmH:0.4567, ifmB:0.2228, ifmA:0.3397},
+  {cat:"Domestic Mass", year:2019, phi:0.3891, psi:0.5080, lam:0.0583, ifmH:0.4485, ifmB:0.2237, ifmA:0.3361},
+  {cat:"Domestic Mass", year:2020, phi:0.4007, psi:0.5030, lam:0.0633, ifmH:0.4519, ifmB:0.2320, ifmA:0.3419},
+  {cat:"Domestic Mass", year:2021, phi:0.4142, psi:0.4183, lam:0.0716, ifmH:0.4163, ifmB:0.2429, ifmA:0.3296},
+  {cat:"Domestic Mass", year:2022, phi:0.4174, psi:0.4848, lam:0.0792, ifmH:0.4511, ifmB:0.2483, ifmA:0.3497}
+];
+
+
+// ── HELPERS ─────────────────────────────────────────────────────
+function fmt(n) { return n.toLocaleString('en-US'); }
+function fmtDec(n, d=3) { return Number(n).toFixed(d); }
+
+function ifmColor(v) {
+  v = parseFloat(v);
+  if (v < 0.30) return '#c8e6c9';
+  if (v < 0.40) return '#fff9c4';
+  if (v < 0.50) return '#ffe0b2';
+  if (v < 0.60) return '#ffcc80';
+  if (v < 0.70) return '#ef9a9a';
+  return '#e57373';
+}
+
+// ── TAB LOGIC ───────────────────────────────────────────────────
+document.querySelectorAll('.blp-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.blp-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.blp-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('panel-' + tab.dataset.panel).classList.add('active');
+  });
+});
+
+// ── MARKET TABLE ────────────────────────────────────────────────
+function renderMarketTable(data, currency) {
+  const head = document.getElementById('marketTableHead');
+  const body = document.getElementById('marketTableBody');
+  head.innerHTML = `<tr><th>#</th><th>Model</th><th>Brand</th><th>Segment</th><th>Fuel</th>
+    <th>Sales 2024</th><th>Sales 2023</th><th>Sales 2022</th>
+    <th>Price (${currency}k)</th><th>HP</th><th>Weight</th><th>WB (mm)</th><th>Eff.</th></tr>`;
+  body.innerHTML = data.map(d => `<tr>
+    <td class="num">${d.rank}</td><td>${d.model}</td><td>${d.brand}</td>
+    <td>${d.segment}</td><td>${d.fuel}</td>
+    <td class="num">${fmt(d.s2024)}</td><td class="num">${fmt(d.s2023)}</td><td class="num">${fmt(d.s2022)}</td>
+    <td class="num">${d.price}</td><td class="num">${d.hp}</td><td class="num">${fmt(d.weight)}</td>
+    <td class="num">${fmt(d.wb)}</td><td class="num">${d.eff || '—'}</td>
+  </tr>`).join('');
+}
+
+function showMarket(m, btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (m === 'cn') renderMarketTable(chinaData, 'CNY');
+  else renderMarketTable(franceData, 'EUR');
+}
+renderMarketTable(chinaData, 'CNY');
+
+// ── BLP TABLE ───────────────────────────────────────────────────
+function renderBLPTable(data) {
+  const head = document.getElementById('blpTableHead');
+  const body = document.getElementById('blpTableBody');
+  head.innerHTML = `<tr><th>Model</th><th>Brand</th><th>s<sub>j</sub></th><th>ln(s/s₀)</th>
+    <th>P/Inc</th><th>HP/Wt</th><th>Size</th><th>EV</th><th>SUV</th>
+    <th>Riv P̄</th><th>Riv HP̄</th><th>Own P̄</th><th>#Own</th><th>#Riv</th></tr>`;
+  body.innerHTML = data.map(d => `<tr>
+    <td>${d.model}</td><td>${d.brand}</td>
+    <td class="num">${fmtDec(d.share,4)}</td><td class="num">${fmtDec(d.delta,3)}</td>
+    <td class="num">${fmtDec(d.priceInc,3)}</td><td class="num">${fmtDec(d.hpWt,4)}</td>
+    <td class="num">${fmtDec(d.size,3)}</td>
+    <td class="num">${d.ev}</td><td class="num">${d.suv}</td>
+    <td class="num">${fmtDec(d.rivP,1)}</td><td class="num">${fmtDec(d.rivHP,1)}</td>
+    <td class="num">${d.ownP ? fmtDec(d.ownP,1) : '—'}</td>
+    <td class="num">${d.nOwn}</td><td class="num">${d.nRiv}</td>
+  </tr>`).join('');
+}
+function showBLP(m, btn) {
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  if (m === 'cn') renderBLPTable(blpChina);
+  else renderBLPTable(blpFrance);
+}
+renderBLPTable(blpChina);
+
+// ── IFM TABLE ───────────────────────────────────────────────────
+(function() {
+  const body = document.getElementById('ifmTableBody');
+  body.innerHTML = ifmData.map(d => `<tr>
+    <td>${d.brand}</td><td>${d.model}</td><td>${d.cat}</td><td class="num">${d.year}</td>
+    <td class="num">${fmtDec(d.phi,3)}</td><td class="num">${fmtDec(d.psi,3)}</td><td class="num">${fmtDec(d.lam,3)}</td>
+    <td class="ifm-cell" style="background:${ifmColor(d.ifmH)}">${fmtDec(d.ifmH,3)}</td>
+    <td class="ifm-cell" style="background:${ifmColor(d.ifmB)}">${fmtDec(d.ifmB,3)}</td>
+    <td class="ifm-cell" style="background:${ifmColor(d.ifmA)}">${fmtDec(d.ifmA,3)}</td>
+    <td class="num">${d.rank}</td>
+  </tr>`).join('');
+})();
+
+
+// ── CHARTS ──────────────────────────────────────────────────────
+const COLORS = {
+  cn: '#c62828', cnBg: '#c6282833',
+  fr: '#1565c0', frBg: '#1565c033',
+  gold: '#b8860b', green: '#2e7d32',
+  accent: '#c9553a', accentBg: '#c9553a33',
+  cats: { 'Foreign Luxury':'#c62828', 'JV Mass':'#1565c0', 'Domestic Premium':'#e65100', 'Domestic Mass':'#2e7d32', 'EV Premium':'#6a1b9a' }
+};
+
+Chart.defaults.font.family = "'Segoe UI', sans-serif";
+Chart.defaults.font.size = 11;
+
+// China Top 15
+new Chart(document.getElementById('chartChinaTop15'), {
+  type: 'bar',
+  data: {
+    labels: chinaData.slice(0,15).map(d => d.model.length > 18 ? d.model.slice(0,16)+'…' : d.model),
+    datasets: [{
+      label: '2024', data: chinaData.slice(0,15).map(d => d.s2024),
+      backgroundColor: COLORS.cn, borderRadius: 3
+    },{
+      label: '2023', data: chinaData.slice(0,15).map(d => d.s2023),
+      backgroundColor: COLORS.cnBg, borderRadius: 3
+    }]
+  },
+  options: { indexAxis:'y', responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:12}}},
+    scales:{ x:{ ticks:{ callback: v => (v/1000)+'k' } } } }
+});
+
+// France Top 15
+new Chart(document.getElementById('chartFranceTop15'), {
+  type: 'bar',
+  data: {
+    labels: franceData.slice(0,15).map(d => d.model.length > 18 ? d.model.slice(0,16)+'…' : d.model),
+    datasets: [{
+      label: '2024', data: franceData.slice(0,15).map(d => d.s2024),
+      backgroundColor: COLORS.fr, borderRadius: 3
+    },{
+      label: '2023', data: franceData.slice(0,15).map(d => d.s2023),
+      backgroundColor: COLORS.frBg, borderRadius: 3
+    }]
+  },
+  options: { indexAxis:'y', responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:12}}},
+    scales:{ x:{ ticks:{ callback: v => (v/1000)+'k' } } } }
+});
+
+// China segments
+const cnSegs = {};
+chinaData.forEach(d => { cnSegs[d.segment] = (cnSegs[d.segment]||0) + d.s2024; });
+new Chart(document.getElementById('chartChinaSeg'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(cnSegs),
+    datasets: [{ data: Object.values(cnSegs), backgroundColor: ['#c62828','#e65100','#1565c0','#2e7d32','#6a1b9a','#795548'], borderWidth:1 }]
+  },
+  options: { responsive:true, plugins:{ legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}} } }
+});
+
+// France segments
+const frSegs = {};
+franceData.forEach(d => { frSegs[d.segment] = (frSegs[d.segment]||0) + d.s2024; });
+new Chart(document.getElementById('chartFranceSeg'), {
+  type: 'doughnut',
+  data: {
+    labels: Object.keys(frSegs),
+    datasets: [{ data: Object.values(frSegs), backgroundColor: ['#1565c0','#c62828','#e65100','#2e7d32','#6a1b9a','#795548'], borderWidth:1 }]
+  },
+  options: { responsive:true, plugins:{ legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}} } }
+});
+
+// Price vs Share scatter
+new Chart(document.getElementById('chartPriceShare'), {
+  type: 'scatter',
+  data: {
+    datasets: [{
+      label: 'China',
+      data: chinaData.map(d => ({x: d.price / 50, y: d.s2024 / 23260000})),
+      backgroundColor: COLORS.cn + '99', borderColor: COLORS.cn, pointRadius: 4
+    },{
+      label: 'France',
+      data: franceData.map(d => ({x: d.price / 25, y: d.s2024 / 1718416})),
+      backgroundColor: COLORS.fr + '99', borderColor: COLORS.fr, pointRadius: 4
+    }]
+  },
+  options: { responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},
+    scales:{ x:{title:{display:true,text:'Price / Income proxy'}}, y:{title:{display:true,text:'Market share sⱼ'}, ticks:{callback:v=>v.toFixed(3)}} } }
+});
+
+// Delta distribution
+new Chart(document.getElementById('chartDeltaDist'), {
+  type: 'bar',
+  data: {
+    labels: ['< -5','-5 to -4.5','-4.5 to -4','-4 to -3.5','-3.5 to -3','-3 to -2.5','-2.5 to -2','-2 to -1.5','> -1.5'],
+    datasets: [{
+      label: 'China', backgroundColor: COLORS.cn + 'aa',
+      data: [4,12,16,10,5,2,1,0,0]
+    },{
+      label: 'France', backgroundColor: COLORS.fr + 'aa',
+      data: [0,2,6,8,5,5,4,6,14]
+    }]
+  },
+  options: { responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},
+    scales:{ y:{title:{display:true,text:'# products'}} } }
+});
+
+// IFM over time
+const years = [2018,2019,2020,2021,2022];
+const catNames = ['Foreign Luxury','JV Mass','Domestic Mass'];
+new Chart(document.getElementById('chartIFMTime'), {
+  type: 'line',
+  data: {
+    labels: years,
+    datasets: catNames.map(cat => ({
+      label: cat,
+      data: years.map(y => { const r = ifmSynthesis.find(s => s.cat===cat && s.year===y); return r ? r.ifmA : null; }),
+      borderColor: COLORS.cats[cat],
+      backgroundColor: COLORS.cats[cat] + '22',
+      tension: 0.3, fill: false, pointRadius: 5, borderWidth: 2.5
+    }))
+  },
+  options: { responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:12}}},
+    scales:{ y:{min:0.2,max:0.75,title:{display:true,text:'IFM (average)'}} } }
+});
+
+// IFM Scatter: phi vs psi
+new Chart(document.getElementById('chartIFMScatter'), {
+  type: 'scatter',
+  data: {
+    datasets: Object.keys(COLORS.cats).map(cat => ({
+      label: cat,
+      data: ifmData.filter(d => d.cat===cat).map(d => ({x:d.phi, y:d.psi})),
+      backgroundColor: COLORS.cats[cat] + 'bb',
+      borderColor: COLORS.cats[cat],
+      pointRadius: 5
+    }))
+  },
+  options: { responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10,font:{size:10}}}},
+    scales:{ x:{title:{display:true,text:'φ (Advertising ratio)'},min:0.2,max:1},
+             y:{title:{display:true,text:'ψ̃ (Hedonic residual)'},min:0,max:1} } }
+});
+
+// IFM Ranking 2022
+const ifm2022 = ifmData.filter(d => d.year === 2022).sort((a,b) => b.ifmA - a.ifmA);
+const top5 = ifm2022.slice(0,5);
+const bot5 = ifm2022.slice(-5).reverse();
+const rankData = [...top5, ...bot5];
+new Chart(document.getElementById('chartIFMRank'), {
+  type: 'bar',
+  data: {
+    labels: rankData.map(d => d.brand + ' ' + d.model),
+    datasets: [{
+      data: rankData.map(d => d.ifmA),
+      backgroundColor: rankData.map(d => COLORS.cats[d.cat] || '#999'),
+      borderRadius: 3
+    }]
+  },
+  options: { indexAxis:'y', responsive:true, plugins:{legend:{display:false}},
+    scales:{ x:{min:0,max:0.9,title:{display:true,text:'IFM (avg)'}} } }
+});
+
+// Cost Instruments chart
+new Chart(document.getElementById('chartCosts'), {
+  type: 'bar',
+  data: {
+    labels: ['Steel HRC','Aluminum','Copper','Nickel','Cobalt×100','Rubber(CN)'],
+    datasets: [
+      {label:'2022', data:[950,2705,8788,25600,3250,12500], backgroundColor:'#c9553a88'},
+      {label:'2023', data:[680,2255,8477,16400,1520,12800], backgroundColor:'#2a5d8a88'},
+      {label:'2024', data:[620,2380,9140,16200,1280,14500], backgroundColor:'#b8860b88'}
+    ]
+  },
+  options: { responsive:true, plugins:{legend:{position:'bottom',labels:{boxWidth:10}}},
+    scales:{ y:{ticks:{callback:v=>v>=1000?(v/1000)+'k':v}} } }
+});
+
+// Lambda chart (2022 data from IFM file)
+const lambdaData = [
+  {model:"BMW X3", cat:"Foreign Luxury", val:12.37},
+  {model:"Mercedes C", cat:"Foreign Luxury", val:10.63},
+  {model:"BMW 3", cat:"Foreign Luxury", val:9.59},
+  {model:"Audi A4L", cat:"Foreign Luxury", val:9.03},
+  {model:"Lexus ES", cat:"Foreign Luxury", val:8.81},
+  {model:"Tesla Model Y", cat:"EV Premium", val:6.99},
+  {model:"Xpeng P7", cat:"Domestic Premium", val:6.55},
+  {model:"VW Passat", cat:"JV Mass", val:6.47},
+  {model:"Buick Regal", cat:"JV Mass", val:6.45},
+  {model:"NIO ET5", cat:"Domestic Premium", val:6.20},
+  {model:"BYD Han EV", cat:"Domestic Premium", val:5.83},
+  {model:"Nissan Altima", cat:"JV Mass", val:5.55},
+  {model:"Toyota Camry", cat:"JV Mass", val:5.31},
+  {model:"Honda Accord", cat:"JV Mass", val:4.80},
+  {model:"BYD Song Plus", cat:"Domestic Mass", val:4.22},
+  {model:"Chery Arrizo", cat:"Domestic Mass", val:4.06},
+  {model:"Haval H6", cat:"Domestic Mass", val:3.81},
+  {model:"Geely Emgrand", cat:"Domestic Mass", val:3.41},
+  {model:"Changan Eado", cat:"Domestic Mass", val:3.26}
+];
+new Chart(document.getElementById('chartLambda'), {
+  type: 'bar',
+  data: {
+    labels: lambdaData.map(d => d.model),
+    datasets: [{
+      data: lambdaData.map(d => d.val),
+      backgroundColor: lambdaData.map(d => COLORS.cats[d.cat] || '#999'),
+      borderRadius: 3
+    }]
+  },
+  options: { responsive:true, plugins:{legend:{display:false}},
+    scales:{ y:{title:{display:true,text:'λ = Price / Net Utility'}} } }
+});
+
+// ── OBSERVERS ───────────────────────────────────────────────────
 const obs = new IntersectionObserver((entries) => {
   entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
 }, { threshold: 0.1 });
